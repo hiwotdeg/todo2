@@ -16,11 +16,11 @@ pipeline {
             steps {
                 echo 'Installing dependencies...'
                 
-                dir('server') {
+                dir('todo_frontend') {
                     sh 'npm install'
                 }
                 
-                dir('client') {
+                dir('todo_backend') {
                     sh 'npm install --verbose'
                     sh 'ls -d */'
                     sh 'if [ ! -d "node_modules" ]; then echo "node_modules directory missing after npm install"; exit 1; fi'
