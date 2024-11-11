@@ -1,11 +1,13 @@
 pipeline {
     agent any
-    
-    tools {
-        nodejs 'NodeJS 16' 
-    }
-    
+
     stages {
+        stage('Clean Workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+        
         stage('Install Dependencies') {
             steps {
                 echo 'Installing dependencies...'
@@ -13,9 +15,9 @@ pipeline {
                     sh 'npm install'
                 }
                 dir('client') {
-                    sh 'npm install'
-                    sh 'echo "Client dependencies installed"'
-                    sh 'ls node_modules' 
+                    sh 'ls -la' 
+                    sh 'npm install --verbose'
+                    sh 'if [ ! -d "node_modules" ]; then echo "node_modules directory missing after npm install"; exit 1; fi'
                 }
             }
         }
@@ -24,7 +26,6 @@ pipeline {
             steps {
                 echo 'Building frontend...'
                 dir('client') {
-                    sh 'ls node_modules'
                     sh 'npm run build'
                 }
             }
