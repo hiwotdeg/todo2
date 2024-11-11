@@ -31,7 +31,7 @@ pipeline {
         stage('Build Frontend') {
             steps {
                 echo 'Building frontend...'
-                dir('client') {
+                dir('todo_frontend') {
                     sh 'npm run build'
                 }
             }
@@ -40,7 +40,7 @@ pipeline {
         stage('Test Backend') {
             steps {
                 echo 'Running backend tests...'
-                dir('server') {
+                dir('todo_backend') {
                     sh 'npm test'
                 }
             }
