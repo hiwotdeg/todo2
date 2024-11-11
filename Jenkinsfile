@@ -17,7 +17,7 @@ pipeline {
                 echo 'Installing dependencies...'
                 
                 dir('todo_frontend') {
-                    sh 'cd ./todo_frontend'
+        
                     sh 'npm install'
                 }
                 
