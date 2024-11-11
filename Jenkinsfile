@@ -22,6 +22,7 @@ pipeline {
             steps {
                 echo 'Building frontend...'
                 dir('client') {
+                    sh 'ls node_modules'
                     sh 'npm run build'
                 }
             }
