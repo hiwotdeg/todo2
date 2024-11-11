@@ -1,7 +1,8 @@
 pipeline {
     agent any
-     tools {
-        nodejs "NodeJS_16" 
+    
+    tools {
+        nodejs "NodeJS_16" // Replace "NodeJS_16" with the name of the Node.js installation in Jenkins
     }
 
     stages {
@@ -10,15 +11,16 @@ pipeline {
                 cleanWs()
             }
         }
-        
+
         stage('Install Dependencies') {
             steps {
                 echo 'Installing dependencies...'
+                
                 dir('server') {
                     sh 'npm install'
                 }
+                
                 dir('client') {
-                    sh 'ls -la' 
                     sh 'npm install --verbose'
                     sh 'if [ ! -d "node_modules" ]; then echo "node_modules directory missing after npm install"; exit 1; fi'
                 }
