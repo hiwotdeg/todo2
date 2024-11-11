@@ -14,6 +14,8 @@ pipeline {
                 }
                 dir('client') {
                     sh 'npm install'
+                    sh 'echo "Client dependencies installed"'
+                    sh 'ls node_modules' 
                 }
             }
         }
