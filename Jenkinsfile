@@ -33,7 +33,9 @@ pipeline {
             steps {
                 echo 'Building frontend...'
                 dir('todo_frontend') {
-                    sh 'npm run build'
+                    catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                    sh 'npm run build --verbose'
+                    }
                 }
             }
         }
