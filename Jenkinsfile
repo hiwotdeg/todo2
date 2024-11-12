@@ -13,12 +13,7 @@ pipeline {
             }
         }
 
-        stage('Clean Workspace') {
-            steps {
-                cleanWs()
-            }
-        }
-
+        
         stage('Verify Workspace Structure') {
             steps {
                 echo 'Checking workspace structure...'
