@@ -23,6 +23,9 @@ pipeline {
             steps {
                 echo 'Checking workspace structure...'
                 sh 'ls -la'
+                sh 'ls -la TODO'        
+                sh 'ls -la TODO/todo_frontend'  
+                sh 'ls -la TODO/todo_backend'   
             }
         }
 
