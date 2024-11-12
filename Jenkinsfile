@@ -16,12 +16,12 @@ pipeline {
             steps {
                 echo 'Installing dependencies...'
                 
-                dir('TODO/todo_frontend') {
+                dir('./TODO/todo_frontend') {
         
-                    sh 'npm install'
+                    sh 'npm install --verbose'
                 }
                 
-                dir('TODO/todo_backend') {
+                dir('./TODO/todo_backend') {
                     sh 'ls -la' 
                     sh 'npm install --verbose'
                     sh 'ls -la' 
@@ -32,7 +32,7 @@ pipeline {
         stage('Build Frontend') {
             steps {
                 echo 'Building frontend...'
-                dir('TODO/todo_frontend') {
+                dir('./TODO/todo_frontend') {
                     catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
                     sh 'npm run build --verbose'
                     }
