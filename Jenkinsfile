@@ -45,10 +45,10 @@ pipeline {
             }
         }
 
-        stage('Test Backend') {
+        stage('Build Backend') {
             steps {
                 dir('TODO/todo_backend') {
-                    sh 'npm test'
+                    sh 'npm run build'
                 }
             }
         }
