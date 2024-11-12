@@ -12,22 +12,20 @@ pipeline {
             }
         }
 
-        stage('Verify Directory Structure') {
+        stage('Verify Workspace Structure') {
             steps {
-                // Log the directory structure for debugging
-                echo 'Checking workspace structure...'
+                echo 'Checking top-level workspace structure...'
                 sh 'ls -la'
-                sh 'ls -la ./TODO/todo_frontend'
-                sh 'cat ./TODO/todo_frontend/package.json' // Show package.json content for confirmation
+                sh 'ls -la TODO'  
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                dir('./TODO/todo_frontend') {
+                dir('TODO/todo_frontend') {  
                     sh 'npm install --verbose'
                 }
-                dir('./TODO/todo_backend') {
+                dir('TODO/todo_backend') {  
                     sh 'npm install --verbose'
                 }
             }
@@ -36,8 +34,7 @@ pipeline {
         stage('Build Frontend') {
             steps {
                 echo 'Building frontend...'
-                dir('./TODO/todo_frontend') {
-                    // Run npm run build
+                dir('TODO/todo_frontend') {
                     catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
                         sh 'npm run build --verbose'
                     }
@@ -47,7 +44,7 @@ pipeline {
 
         stage('Test Backend') {
             steps {
-                dir('./TODO/todo_backend') {
+                dir('TODO/todo_backend') {
                     sh 'npm test'
                 }
             }
