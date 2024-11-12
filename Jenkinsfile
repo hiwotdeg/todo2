@@ -19,6 +19,7 @@ pipeline {
                 dir('./TODO/todo_frontend') {
         
                     sh 'npm install --verbose'
+                    sh 'npm run build --verbose'
                 }
                 
                 dir('./TODO/todo_backend') {
