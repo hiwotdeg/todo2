@@ -2,7 +2,7 @@ pipeline {
     agent any
     
     tools {
-        nodejs "NodeJS 16" 
+        nodejs "NodeJS 16"
     }
 
     stages {
@@ -12,20 +12,23 @@ pipeline {
             }
         }
 
+        stage('Verify Directory Structure') {
+            steps {
+                // Log the directory structure for debugging
+                echo 'Checking workspace structure...'
+                sh 'ls -la'
+                sh 'ls -la ./TODO/todo_frontend'
+                sh 'cat ./TODO/todo_frontend/package.json' // Show package.json content for confirmation
+            }
+        }
+
         stage('Install Dependencies') {
             steps {
-                echo 'Installing dependencies...'
-                
                 dir('./TODO/todo_frontend') {
-        
                     sh 'npm install --verbose'
-                    sh 'npm run build --verbose'
                 }
-                
                 dir('./TODO/todo_backend') {
-                    sh 'ls -la' 
                     sh 'npm install --verbose'
-                    sh 'ls -la' 
                 }
             }
         }
@@ -34,9 +37,9 @@ pipeline {
             steps {
                 echo 'Building frontend...'
                 dir('./TODO/todo_frontend') {
-                    sh 'npm run' 
+                    // Run npm run build
                     catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-                    sh 'npm run build --verbose'
+                        sh 'npm run build --verbose'
                     }
                 }
             }
@@ -44,8 +47,7 @@ pipeline {
 
         stage('Test Backend') {
             steps {
-                echo 'Running backend tests...'
-                dir('TODO/todo_backend') {
+                dir('./TODO/todo_backend') {
                     sh 'npm test'
                 }
             }
@@ -60,7 +62,6 @@ pipeline {
             echo 'Pipeline failed.'
         }
         always {
-            echo 'Cleaning up...'
             cleanWs()
         }
     }
