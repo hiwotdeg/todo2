@@ -6,6 +6,13 @@ pipeline {
     }
 
     stages {
+        stage('Checkout Source Code') {
+            steps {
+                echo 'Checking out source code...'
+                checkout scm // This will pull code from the configured repository
+            }
+        }
+
         stage('Clean Workspace') {
             steps {
                 cleanWs()
@@ -14,18 +21,17 @@ pipeline {
 
         stage('Verify Workspace Structure') {
             steps {
-                echo 'Checking top-level workspace structure...'
+                echo 'Checking workspace structure...'
                 sh 'ls -la'
-                sh 'ls -la TODO'  
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                dir('TODO/todo_frontend') {  
+                dir('TODO/todo_frontend') {
                     sh 'npm install --verbose'
                 }
-                dir('TODO/todo_backend') {  
+                dir('TODO/todo_backend') {
                     sh 'npm install --verbose'
                 }
             }
@@ -33,7 +39,6 @@ pipeline {
 
         stage('Build Frontend') {
             steps {
-                echo 'Building frontend...'
                 dir('TODO/todo_frontend') {
                     catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
                         sh 'npm run build --verbose'
