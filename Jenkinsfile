@@ -1,57 +1,79 @@
 pipeline {
     agent any
-
+     
     tools {
-        nodejs "NodeJS 16" // Ensure NodeJS is installed on the Jenkins agent
+        nodejs "NodeJS 16"
     }
 
     environment {
-        // Define any environment variables you may need
-        DOCKER_COMPOSE_FILE = "docker-compose.yml"
+        FRONTEND_IMAGE = 'todo-frontend'
+        BACKEND_IMAGE = 'todo-backend'
+        VM_IP = '10.254.99.54'  // Replace with your VM's IP address
+        VM_USER = 'kifiya' // Replace with your VM's user
+        MONGO_URL = 'mongodb://admin:password@mongo:27017/TODO' // MongoDB URL
     }
 
     stages {
-        stage('Checkout Code') {
+        stage('Checkout Source Code') {
             steps {
                 echo 'Checking out source code...'
-                checkout scm
+                checkout scm // This will pull code from the configured repository
             }
         }
 
-        stage('Verify Workspace') {
+        stage('Build Frontend Docker Image') {
             steps {
-                echo 'Verifying workspace structure...'
-                sh 'ls -la'
-                sh 'ls -la TODO'
-                sh 'ls -la TODO/todo_frontend'
-                sh 'ls -la TODO/todo_backend'
+                dir('TODO/todo_frontend') {
+                    script {
+                        // Build the frontend image
+                        sh "docker build -t ${FRONTEND_IMAGE} ."
+                    }
+                }
             }
         }
 
-        stage('Build and Deploy with Docker Compose') {
+        stage('Build Backend Docker Image') {
             steps {
-                echo 'Building and deploying the application using Docker Compose...'
-
-                // Build the application
-                sh "docker-compose -f ${DOCKER_COMPOSE_FILE} build --no-cache"
-
-                // Start the application
-                sh "docker-compose -f ${DOCKER_COMPOSE_FILE} up -d"
+                dir('TODO/todo_backend') {
+                    script {
+                        // Build the backend image
+                        sh "docker build -t ${BACKEND_IMAGE} ."
+                    }
+                }
             }
         }
 
-        
+        stage('Deploy Frontend') {
+            steps {
+                script {
+                    // Copy the frontend code to the VM
+                    sh """
+                    scp -r TODO/todo_frontend ${VM_USER}@${VM_IP}:~/todo_frontend
+                    ssh ${VM_USER}@${VM_IP} 'docker run -d --name frontend -p 80:80 ${FRONTEND_IMAGE}'
+                    """
+                }
+            }
+        }
+
+        stage('Deploy Backend') {
+            steps {
+                script {
+                    // Copy the backend code to the VM
+                    sh """
+                    scp -r TODO/todo_backend ${VM_USER}@${VM_IP}:~/todo_backend
+                    ssh ${VM_USER}@${VM_IP} 'docker run -d --name backend -p 5000:5000 -e MONGO_URL=${MONGO_URL} ${BACKEND_IMAGE}'
+                    """
+                }
+            }
+        }
+    }
 
     post {
         success {
-            echo 'Pipeline completed successfully!'
+            echo "Frontend and Backend deployed successfully!"
         }
         failure {
-            echo 'Pipeline failed.'
-        }
-        always {
-            echo 'Cleaning up workspace...'
-            cleanWs()
+            echo "Deployment failed!"
         }
     }
 }
