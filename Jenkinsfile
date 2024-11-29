@@ -1,58 +1,46 @@
 pipeline {
     agent any
-    
+
     tools {
-        nodejs "NodeJS 16"
+        nodejs "NodeJS 16" // Ensure NodeJS is installed on the Jenkins agent
+    }
+
+    environment {
+        // Define any environment variables you may need
+        DOCKER_COMPOSE_FILE = "docker-compose.yml"
     }
 
     stages {
-        stage('Checkout Source Code') {
+        stage('Checkout Code') {
             steps {
                 echo 'Checking out source code...'
-                checkout scm // This will pull code from the configured repository
+                checkout scm
+            }
+        }
+
+        stage('Verify Workspace') {
+            steps {
+                echo 'Verifying workspace structure...'
+                sh 'ls -la'
+                sh 'ls -la TODO'
+                sh 'ls -la TODO/todo_frontend'
+                sh 'ls -la TODO/todo_backend'
+            }
+        }
+
+        stage('Build and Deploy with Docker Compose') {
+            steps {
+                echo 'Building and deploying the application using Docker Compose...'
+
+                // Build the application
+                sh "docker-compose -f ${DOCKER_COMPOSE_FILE} build --no-cache"
+
+                // Start the application
+                sh "docker-compose -f ${DOCKER_COMPOSE_FILE} up -d"
             }
         }
 
         
-        stage('Verify Workspace Structure') {
-            steps {
-                echo 'Checking workspace structure...'
-                sh 'ls -la'
-                sh 'ls -la TODO'        
-                sh 'ls -la TODO/todo_frontend'  
-                sh 'ls -la TODO/todo_backend'   
-            }
-        }
-
-        stage('Install Dependencies') {
-            steps {
-                dir('TODO/todo_frontend') {
-                    sh 'npm install --verbose'
-                }
-                dir('TODO/todo_backend') {
-                    sh 'npm install --verbose'
-                }
-            }
-        }
-
-        stage('Build Frontend') {
-            steps {
-                dir('TODO/todo_frontend') {
-                    catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-                        sh 'npm run build --verbose'
-                    }
-                }
-            }
-        }
-
-        stage('Build Backend') {
-            steps {
-                dir('TODO/todo_backend') {
-                    sh 'npm run build'
-                }
-            }
-        }
-    }
 
     post {
         success {
@@ -62,6 +50,7 @@ pipeline {
             echo 'Pipeline failed.'
         }
         always {
+            echo 'Cleaning up workspace...'
             cleanWs()
         }
     }
