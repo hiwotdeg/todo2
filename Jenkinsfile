@@ -1,5 +1,5 @@
 pipeline {
-    agent any
+    agent { label 'agent1' }
 
     environment {
         BACKEND_DOCKER_IMAGE = 'mern-todo-app-backend'
