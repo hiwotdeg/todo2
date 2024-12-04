@@ -43,8 +43,11 @@ pipeline {
                 script {
                     // Copy Docker images to the VM and run them using SSH
                     sh '''
+                        # Ensure .ssh directory exists for the Jenkins user
+                        mkdir -p /var/jenkins_home/.ssh
+                        
                         # Add VM's SSH key to known hosts to avoid "Host key verification failed"
-                        ssh-keyscan -H ${VM_IP} >> ~/.ssh/known_hosts
+                        ssh-keyscan -H ${VM_IP} >> /var/jenkins_home/.ssh/known_hosts
                         
                         # Save backend and frontend images as tar files
                         docker save ${BACKEND_DOCKER_IMAGE} -o backend.tar
