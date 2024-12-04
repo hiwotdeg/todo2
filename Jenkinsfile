@@ -43,6 +43,9 @@ pipeline {
                 script {
                     // Copy Docker images to the VM and run them using SSH
                     sh '''
+                        # Add VM's SSH key to known hosts to avoid "Host key verification failed"
+                        ssh-keyscan -H ${VM_IP} >> ~/.ssh/known_hosts
+                        
                         # Save backend and frontend images as tar files
                         docker save ${BACKEND_DOCKER_IMAGE} -o backend.tar
                         docker save ${FRONTEND_DOCKER_IMAGE} -o frontend.tar
