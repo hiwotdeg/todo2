@@ -49,6 +49,9 @@ pipeline {
                         # Add VM's SSH key to known hosts to avoid "Host key verification failed"
                         ssh-keyscan -H ${VM_IP} >> /var/jenkins_home/.ssh/known_hosts
                         
+                        # Set permissions to make sure it's readable
+                        chmod 644 /var/jenkins_home/.ssh/known_hosts
+                        
                         # Save backend and frontend images as tar files
                         docker save ${BACKEND_DOCKER_IMAGE} -o backend.tar
                         docker save ${FRONTEND_DOCKER_IMAGE} -o frontend.tar
