@@ -50,8 +50,8 @@ pipeline {
                         # Copy images to the VM
                         scp -i ${SSH_KEY_PATH} backend.tar frontend.tar ${SSH_USER}@${VM_IP}:/tmp
                         
-                        # SSH into the VM to deploy containers
-                        ssh -i ${SSH_KEY_PATH} ${SSH_USER}@${VM_IP} << EOF
+                        # SSH into the VM to deploy the app
+                        ssh -i ${SSH_KEY_PATH} ${SSH_USER}@${VM_IP} << 'EOF'
                             # Navigate to the MongoDB Docker Compose directory
                             cd /home/kifiya/mongodb
                             
@@ -63,11 +63,9 @@ pipeline {
                             docker load -i /tmp/backend.tar
                             docker load -i /tmp/frontend.tar
                             
-                            # Stop any existing backend and frontend containers
-                            docker stop backend-container || true
-                            docker rm backend-container || true
-                            docker stop frontend-container || true
-                            docker rm frontend-container || true
+                            # Clean up existing containers using the required ports
+                            docker ps --filter "publish=5000" --filter "publish=80" --quiet | xargs --no-run-if-empty docker stop
+                            docker ps --filter "publish=5000" --filter "publish=80" --quiet | xargs --no-run-if-empty docker rm
                             
                             # Start the new backend and frontend containers
                             docker run -d --name backend-container -p 5000:5000 ${BACKEND_DOCKER_IMAGE}
@@ -81,7 +79,7 @@ pipeline {
 
     post {
         always {
-            cleanWs() // Clean workspace after the build
+            cleanWs() // Clean the workspace after the build
         }
     }
 }
