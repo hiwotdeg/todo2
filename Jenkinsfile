@@ -7,13 +7,14 @@ pipeline {
         VM_IP = '10.254.99.54'
         SSH_USER = 'kifiya'
         SSH_KEY_PATH = '/var/jenkins_home/.ssh/id_rsa' // Path to the private SSH key
+        MONGO_DOCKER_COMPOSE_DIR = '/home/kifiya/mongodb' // Path to MongoDB docker-compose.yml on the VM
     }
 
     stages {
         stage('Checkout Source Code') {
             steps {
                 echo 'Checking out source code...'
-                checkout scm // Pull code from the configured repository
+                checkout scm // Pulls code from the configured repository
             }
         }
         
@@ -42,37 +43,42 @@ pipeline {
         stage('Deploy to VM') {
             steps {
                 script {
+                    echo 'Deploying to VM...'
                     sh """
-                        # Save backend and frontend images as tar files
+                        # Save Docker images as tar files
                         docker save ${BACKEND_DOCKER_IMAGE} -o backend.tar
                         docker save ${FRONTEND_DOCKER_IMAGE} -o frontend.tar
                         
-                        # Copy images to the VM
+                        # Copy tar files to the VM
                         scp -i ${SSH_KEY_PATH} backend.tar frontend.tar ${SSH_USER}@${VM_IP}:/tmp
                         
-                        # SSH into the VM to deploy the app
+                        # SSH into the VM to handle deployment
                         ssh -i ${SSH_KEY_PATH} ${SSH_USER}@${VM_IP} << 'EOF'
                             set -e
                             echo 'Starting deployment on VM...'
                             
-                            # Navigate to the MongoDB Docker Compose directory
-                            cd /home/kifiya/mongodb
+                            # Navigate to MongoDB Docker Compose directory
+                            cd ${MONGO_DOCKER_COMPOSE_DIR}
                             
-                            # Bring up MongoDB container
+                            # Restart MongoDB using docker-compose
                             docker-compose down || true
                             docker-compose up -d
-                            
+
                             # Load Docker images on the VM
                             docker load -i /tmp/backend.tar
                             docker load -i /tmp/frontend.tar
                             
-                            # Stop and remove existing containers with the same name
+                            # Clean up containers using conflicting ports
+                            docker ps --filter "publish=5000" --filter "publish=80" --quiet | xargs --no-run-if-empty docker stop
+                            docker ps --filter "publish=5000" --filter "publish=80" --quiet | xargs --no-run-if-empty docker rm
+                            
+                            # Remove conflicting containers by name
                             docker ps -a --filter "name=backend-container" --quiet | xargs --no-run-if-empty docker stop
                             docker ps -a --filter "name=backend-container" --quiet | xargs --no-run-if-empty docker rm
                             docker ps -a --filter "name=frontend-container" --quiet | xargs --no-run-if-empty docker stop
                             docker ps -a --filter "name=frontend-container" --quiet | xargs --no-run-if-empty docker rm
                             
-                            # Start the new backend and frontend containers
+                            # Start new backend and frontend containers
                             docker run -d --name backend-container -p 5000:5000 ${BACKEND_DOCKER_IMAGE}
                             docker run -d --name frontend-container -p 80:80 ${FRONTEND_DOCKER_IMAGE}
                         EOF
@@ -85,7 +91,7 @@ pipeline {
     post {
         always {
             echo 'Cleaning up workspace...'
-            cleanWs()  // Clean workspace after the build
+            cleanWs()
         }
     }
 }
