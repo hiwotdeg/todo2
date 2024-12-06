@@ -69,13 +69,15 @@ pipeline {
                             docker load -i /tmp/backend.tar
                             docker load -i /tmp/frontend.tar
 
-                            # Update docker-compose.yml with correct image names
+                            # Update docker-compose.yml with correct image names (no tag, use default)
                             sed -i 's|image: .*mern-todo-app-backend.*|image: mern-todo-app-backend|' docker-compose.yml
                             sed -i 's|image: .*mern-todo-app-frontend.*|image: mern-todo-app-frontend|' docker-compose.yml
 
-                            # Restart services using Docker Compose
-                            docker-compose down || true  # Stop running containers (if any)
-                            docker-compose up -d --no-build --no-pull --force-recreate  # Recreate containers using local images
+                            # Stop and remove existing containers
+                            docker-compose down || true  # Stop and remove containers (if any)
+
+                            # Start the services with the newly loaded images
+                            docker-compose up -d --no-build --remove-orphans  # Use --no-build to avoid rebuilding the images
 EOF
                     """
                 }
