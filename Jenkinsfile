@@ -54,7 +54,7 @@ pipeline {
                         scp -i ${SSH_KEY_PATH} backend.tar frontend.tar ${SSH_USER}@${VM_IP}:/tmp
                         
                         # SSH into the VM to handle deployment
-                        ssh -i ${SSH_KEY_PATH} ${SSH_USER}@${VM_IP} << 'EOF'
+                        ssh -i ${SSH_KEY_PATH} ${SSH_USER}@${VM_IP} << EOF
                             set -e
                             echo 'Starting deployment on VM...'
 
@@ -68,7 +68,7 @@ pipeline {
                             # Restart MongoDB, Backend, and Frontend using Docker Compose
                             docker-compose down || true  # Stop running containers (if any)
                             docker-compose up -d  # Start containers in detached mode
-                        EOF
+EOF
                     """
                 }
             }
