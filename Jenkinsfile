@@ -23,7 +23,9 @@ pipeline {
                 dir('TODO/todo_backend') {
                     script {
                         echo 'Building backend Docker image...'
-                        sh 'docker build -t ${BACKEND_DOCKER_IMAGE} .'
+                        sh """
+                            docker build -t ${BACKEND_DOCKER_IMAGE}:latest .
+                        """
                     }
                 }
             }
@@ -34,7 +36,9 @@ pipeline {
                 dir('TODO/todo_frontend') {
                     script {
                         echo 'Building frontend Docker image...'
-                        sh 'docker build -t ${FRONTEND_DOCKER_IMAGE} .'
+                        sh """
+                            docker build -t ${FRONTEND_DOCKER_IMAGE}:latest .
+                        """
                     }
                 }
             }
@@ -47,26 +51,30 @@ pipeline {
 
                     sh """
                         # Save Docker images as tar files
-                        docker save ${BACKEND_DOCKER_IMAGE} -o backend.tar
-                        docker save ${FRONTEND_DOCKER_IMAGE} -o frontend.tar
+                        docker save ${BACKEND_DOCKER_IMAGE}:latest -o backend.tar
+                        docker save ${FRONTEND_DOCKER_IMAGE}:latest -o frontend.tar
                         
                         # Copy tar files to the VM
                         scp -i ${SSH_KEY_PATH} backend.tar frontend.tar ${SSH_USER}@${VM_IP}:/tmp
                         
                         # SSH into the VM to handle deployment
-                        ssh -i ${SSH_KEY_PATH} ${SSH_USER}@${VM_IP} << EOF
+                        ssh -i ${SSH_KEY_PATH} ${SSH_USER}@${VM_IP} << 'EOF'
                             set -e
                             echo 'Starting deployment on VM...'
 
-                            # Navigate to MongoDB Docker Compose directory
+                            # Navigate to Docker Compose directory
                             cd ${MONGO_DOCKER_COMPOSE_DIR}
 
-                            # Load Docker images on the VM
+                            # Load Docker images
                             docker load -i /tmp/backend.tar
                             docker load -i /tmp/frontend.tar
 
-                            # Restart MongoDB, Backend, and Frontend using Docker Compose
-                            docker-compose down || true  # Stop running containers (if any)
+                            # Update the docker-compose.yml with correct image tags if needed
+                            sed -i 's|image: .*mern-todo-app-backend.*|image: mern-todo-app-backend:latest|' docker-compose.yml
+                            sed -i 's|image: .*mern-todo-app-frontend.*|image: mern-todo-app-frontend:latest|' docker-compose.yml
+
+                            # Restart services using Docker Compose
+                            docker-compose down || true  # Stop running containers
                             docker-compose up -d  # Start containers in detached mode
 EOF
                     """
@@ -76,6 +84,12 @@ EOF
     }
 
     post {
+        success {
+            echo 'Deployment succeeded!'
+        }
+        failure {
+            echo 'Deployment failed. Check the logs for details.'
+        }
         always {
             echo 'Cleaning up workspace...'
             cleanWs()
