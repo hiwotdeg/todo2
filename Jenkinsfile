@@ -24,7 +24,7 @@ pipeline {
                     script {
                         echo 'Building backend Docker image...'
                         sh """
-                            docker build -t ${BACKEND_DOCKER_IMAGE}:latest .
+                            docker build -t ${BACKEND_DOCKER_IMAGE} .
                         """
                     }
                 }
@@ -37,7 +37,7 @@ pipeline {
                     script {
                         echo 'Building frontend Docker image...'
                         sh """
-                            docker build -t ${FRONTEND_DOCKER_IMAGE}:latest .
+                            docker build -t ${FRONTEND_DOCKER_IMAGE} .
                         """
                     }
                 }
@@ -51,8 +51,8 @@ pipeline {
 
                     sh """
                         # Save Docker images as tar files
-                        docker save ${BACKEND_DOCKER_IMAGE}:latest -o backend.tar
-                        docker save ${FRONTEND_DOCKER_IMAGE}:latest -o frontend.tar
+                        docker save ${BACKEND_DOCKER_IMAGE} -o backend.tar
+                        docker save ${FRONTEND_DOCKER_IMAGE} -o frontend.tar
                         
                         # Copy tar files to the VM
                         scp -i ${SSH_KEY_PATH} backend.tar frontend.tar ${SSH_USER}@${VM_IP}:/tmp
@@ -69,13 +69,13 @@ pipeline {
                             docker load -i /tmp/backend.tar
                             docker load -i /tmp/frontend.tar
 
-                            # Ensure docker-compose uses local images
-                            sed -i 's|image: .*mern-todo-app-backend.*|image: mern-todo-app-backend:latest|' docker-compose.yml
-                            sed -i 's|image: .*mern-todo-app-frontend.*|image: mern-todo-app-frontend:latest|' docker-compose.yml
+                            # Update docker-compose.yml with correct image names
+                            sed -i 's|image: .*mern-todo-app-backend.*|image: mern-todo-app-backend|' docker-compose.yml
+                            sed -i 's|image: .*mern-todo-app-frontend.*|image: mern-todo-app-frontend|' docker-compose.yml
 
                             # Restart services using Docker Compose
-                            docker-compose down || true  # Stop running containers
-                            docker-compose up -d --no-build --no-pull  # Start containers in detached mode
+                            docker-compose down || true  # Stop running containers (if any)
+                            docker-compose up -d --no-build --no-pull --force-recreate  # Recreate containers using local images
 EOF
                     """
                 }
