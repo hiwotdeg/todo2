@@ -69,13 +69,13 @@ pipeline {
                             docker load -i /tmp/backend.tar
                             docker load -i /tmp/frontend.tar
 
-                            # Update the docker-compose.yml with correct image tags if needed
+                            # Ensure docker-compose uses local images
                             sed -i 's|image: .*mern-todo-app-backend.*|image: mern-todo-app-backend:latest|' docker-compose.yml
                             sed -i 's|image: .*mern-todo-app-frontend.*|image: mern-todo-app-frontend:latest|' docker-compose.yml
 
                             # Restart services using Docker Compose
                             docker-compose down || true  # Stop running containers
-                            docker-compose up -d  # Start containers in detached mode
+                            docker-compose up -d --no-build --no-pull  # Start containers in detached mode
 EOF
                     """
                 }
