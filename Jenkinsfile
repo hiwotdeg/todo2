@@ -2,40 +2,44 @@ pipeline {
     agent any
 
     environment {
-        BACKEND_DOCKER_IMAGE = 'mern-todo-app-backend'
-        FRONTEND_DOCKER_IMAGE = 'mern-todo-app-frontend'
-        VM_IP = '10.254.99.54'
-        SSH_USER = 'kifiya'
-        SSH_KEY_PATH = '/var/jenkins_home/.ssh/id_rsa' // Path to the private SSH key
-        MONGO_DOCKER_COMPOSE_DIR = '/home/kifiya/mongodb' // Path to MongoDB docker-compose.yml on the VM
+        BACKEND_DOCKER_IMAGE = 'backend-image:latest'
+        FRONTEND_DOCKER_IMAGE = 'frontend-image:latest'
+        SSH_KEY_PATH = '/path/to/your/private/key'
+        SSH_USER = 'your_vm_user'
+        VM_IP = 'your_vm_ip'
+        MONGO_DOCKER_COMPOSE_DIR = '/home/kifiya/mongodb'
     }
 
     stages {
-        stage('Checkout Source Code') {
+        stage('Build Backend') {
             steps {
-                echo 'Checking out source code...'
-                checkout scm // Pulls code from the configured repository
-            }
-        }
-        
-        stage('Build Docker Image - Backend') {
-            steps {
-                dir('TODO/todo_backend') {
-                    script {
-                        echo 'Building backend Docker image...'
-                        sh 'docker build -t ${BACKEND_DOCKER_IMAGE} .'
-                    }
+                script {
+                    echo 'Building backend...'
+                    // Build backend code if necessary
                 }
             }
         }
 
-        stage('Build Docker Image - Frontend') {
+        stage('Build Frontend') {
             steps {
-                dir('TODO/todo_frontend') {
-                    script {
-                        echo 'Building frontend Docker image...'
-                        sh 'docker build -t ${FRONTEND_DOCKER_IMAGE} .'
-                    }
+                script {
+                    echo 'Building frontend...'
+                    // Build frontend code if necessary
+                }
+            }
+        }
+
+        stage('Dockerize Backend and Frontend') {
+            steps {
+                script {
+                    echo 'Dockerizing backend and frontend...'
+                    sh """
+                        # Build backend Docker image
+                        docker build -t ${BACKEND_DOCKER_IMAGE} ./backend
+                        
+                        # Build frontend Docker image
+                        docker build -t ${FRONTEND_DOCKER_IMAGE} ./frontend
+                    """
                 }
             }
         }
@@ -63,22 +67,29 @@ pipeline {
                             # Restart MongoDB using docker-compose
                             docker-compose down || true
                             docker-compose up -d
-
+                            
                             # Load Docker images on the VM
                             docker load -i /tmp/backend.tar
                             docker load -i /tmp/frontend.tar
                             
-                            # Clean up containers using conflicting ports
+                            # Stop and remove containers using conflicting ports
+                            echo 'Stopping conflicting containers...'
                             docker ps --filter "publish=5000" --filter "publish=80" --quiet | xargs --no-run-if-empty docker stop
                             docker ps --filter "publish=5000" --filter "publish=80" --quiet | xargs --no-run-if-empty docker rm
                             
-                            # Remove conflicting containers by name
+                            # Stop and remove containers by name
                             docker ps -a --filter "name=backend-container" --quiet | xargs --no-run-if-empty docker stop
                             docker ps -a --filter "name=backend-container" --quiet | xargs --no-run-if-empty docker rm
                             docker ps -a --filter "name=frontend-container" --quiet | xargs --no-run-if-empty docker stop
                             docker ps -a --filter "name=frontend-container" --quiet | xargs --no-run-if-empty docker rm
                             
+                            # Confirm ports are free
+                            echo 'Checking port availability...'
+                            netstat -tuln | grep ':5000' && echo "Port 5000 is in use!" || echo "Port 5000 is free."
+                            netstat -tuln | grep ':80' && echo "Port 80 is in use!" || echo "Port 80 is free."
+                            
                             # Start new backend and frontend containers
+                            echo 'Starting new containers...'
                             docker run -d --name backend-container -p 5000:5000 ${BACKEND_DOCKER_IMAGE}
                             docker run -d --name frontend-container -p 80:80 ${FRONTEND_DOCKER_IMAGE}
                         EOF
@@ -89,9 +100,11 @@ pipeline {
     }
 
     post {
-        always {
-            echo 'Cleaning up workspace...'
-            cleanWs()
+        success {
+            echo 'Deployment successful!'
+        }
+        failure {
+            echo 'Deployment failed. Check logs for details.'
         }
     }
 }
