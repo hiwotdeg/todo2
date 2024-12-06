@@ -40,10 +40,11 @@ pipeline {
             }
         }
 
-        stage('Deploy to VM') {
+        stage('Deploy to VM using Docker Compose') {
             steps {
                 script {
-                    echo 'Deploying to VM...'
+                    echo 'Deploying to VM using Docker Compose...'
+
                     sh """
                         # Save Docker images as tar files
                         docker save ${BACKEND_DOCKER_IMAGE} -o backend.tar
@@ -56,36 +57,17 @@ pipeline {
                         ssh -i ${SSH_KEY_PATH} ${SSH_USER}@${VM_IP} << 'EOF'
                             set -e
                             echo 'Starting deployment on VM...'
-                            
+
                             # Navigate to MongoDB Docker Compose directory
                             cd ${MONGO_DOCKER_COMPOSE_DIR}
-                            
-                            # Restart MongoDB using docker-compose
-                            docker-compose down || true
-                            docker-compose up -d
-                            
+
                             # Load Docker images on the VM
                             docker load -i /tmp/backend.tar
                             docker load -i /tmp/frontend.tar
-                            
-                            # Clean up containers using conflicting ports
-                            echo 'Stopping any container using port 5000 or 80...'
-                            docker ps --filter "publish=5000" --filter "publish=80" --quiet | xargs --no-run-if-empty docker stop
-                            docker ps --filter "publish=5000" --filter "publish=80" --quiet | xargs --no-run-if-empty docker rm
-                            
-                            # Remove conflicting containers by name
-                            docker ps -a --filter "name=backend-container" --quiet | xargs --no-run-if-empty docker stop
-                            docker ps -a --filter "name=backend-container" --quiet | xargs --no-run-if-empty docker rm
-                            docker ps -a --filter "name=frontend-container" --quiet | xargs --no-run-if-empty docker stop
-                            docker ps -a --filter "name=frontend-container" --quiet | xargs --no-run-if-empty docker rm
-                            
-                            # Check if ports are free
-                            ss -tuln | grep ':5000' && echo "Port 5000 is in use!" || echo "Port 5000 is free."
-                            ss -tuln | grep ':80' && echo "Port 80 is in use!" || echo "Port 80 is free."
-                            
-                            # Start new backend and frontend containers
-                            docker run -d --name backend-container -p 5000:5000 ${BACKEND_DOCKER_IMAGE}
-                            docker run -d --name frontend-container -p 80:80 ${FRONTEND_DOCKER_IMAGE}
+
+                            # Restart MongoDB, Backend, and Frontend using Docker Compose
+                            docker-compose down || true  # Stop running containers (if any)
+                            docker-compose up -d  # Start containers in detached mode
                         EOF
                     """
                 }
