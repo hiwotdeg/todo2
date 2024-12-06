@@ -17,7 +17,7 @@ pipeline {
                 checkout scm // Pulls code from the configured repository
             }
         }
-        
+
         stage('Build Docker Image - Backend') {
             steps {
                 dir('TODO/todo_backend') {
@@ -80,8 +80,8 @@ pipeline {
                             docker ps -a --filter "name=frontend-container" --quiet | xargs --no-run-if-empty docker rm
                             
                             # Check if ports are free
-                            netstat -tuln | grep ':5000' && echo "Port 5000 is in use!" || echo "Port 5000 is free."
-                            netstat -tuln | grep ':80' && echo "Port 80 is in use!" || echo "Port 80 is free."
+                            ss -tuln | grep ':5000' && echo "Port 5000 is in use!" || echo "Port 5000 is free."
+                            ss -tuln | grep ':80' && echo "Port 80 is in use!" || echo "Port 80 is free."
                             
                             # Start new backend and frontend containers
                             docker run -d --name backend-container -p 5000:5000 ${BACKEND_DOCKER_IMAGE}
