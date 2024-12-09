@@ -4,7 +4,7 @@ pipeline {
     environment {
         BACKEND_DOCKER_IMAGE = 'mern-todo-app-backend'
         FRONTEND_DOCKER_IMAGE = 'mern-todo-app-frontend'
-        VM_IP = '10.254.99.54'
+        IP = credentials('IP') // Use the ID of the secret text
         SSH_USER = 'kifiya'
         SSH_KEY_PATH = '/var/jenkins_home/.ssh/id_rsa' // Path to the private SSH key
         MONGO_DOCKER_COMPOSE_DIR = '/home/kifiya/mongodb' // Path to MongoDB docker-compose.yml on the VM
@@ -55,10 +55,10 @@ pipeline {
                         docker save ${FRONTEND_DOCKER_IMAGE} -o frontend.tar
                         
                         # Copy tar files to the VM
-                        scp -i ${SSH_KEY_PATH} backend.tar frontend.tar ${SSH_USER}@${VM_IP}:/tmp
+                        scp -i ${SSH_KEY_PATH} backend.tar frontend.tar ${SSH_USER}@${IP}:/tmp
                         
                         # SSH into the VM to handle deployment
-                        ssh -i ${SSH_KEY_PATH} ${SSH_USER}@${VM_IP} << 'EOF'
+                        ssh -i ${SSH_KEY_PATH} ${SSH_USER}@${IP} << 'EOF'
                             set -e
                             echo 'Starting deployment on VM...'
 
