@@ -6,7 +6,6 @@ pipeline {
         FRONTEND_DOCKER_IMAGE = 'mern-todo-app-frontend'
         IP = credentials('IP') // Use the ID of the secret text
         SSH_USER = 'kifiya'
-        SSH_KEY_PATH = '/var/jenkins_home/.ssh/id_rsa' // Path to the private SSH key
         MONGO_DOCKER_COMPOSE_DIR = '/home/kifiya/mongodb' // Path to MongoDB docker-compose.yml on the VM
     }
 
@@ -49,37 +48,51 @@ pipeline {
                 script {
                     echo 'Deploying to VM using Docker Compose...'
 
-                    sh """
-                        # Save Docker images as tar files
-                        docker save ${BACKEND_DOCKER_IMAGE} -o backend.tar
-                        docker save ${FRONTEND_DOCKER_IMAGE} -o frontend.tar
-                        
-                        # Copy tar files to the VM
-                        scp -i ${SSH_KEY_PATH} backend.tar frontend.tar ${SSH_USER}@${IP}:/tmp
-                        
-                        # SSH into the VM to handle deployment
-                        ssh -i ${SSH_KEY_PATH} ${SSH_USER}@${IP} << 'EOF'
+                    sshagent(['VM_SSH_KEY']) { // Use the ID of the SSH key credential
+                        sh """
                             set -e
-                            echo 'Starting deployment on VM...'
 
-                            # Navigate to Docker Compose directory
-                            cd ${MONGO_DOCKER_COMPOSE_DIR}
+                            # Save Docker images as tar files
+                            echo 'Saving Docker images...'
+                            docker save ${BACKEND_DOCKER_IMAGE} -o backend.tar
+                            docker save ${FRONTEND_DOCKER_IMAGE} -o frontend.tar
+                            
+                            # Copy tar files to the VM
+                            echo 'Copying Docker images to the VM...'
+                            scp backend.tar frontend.tar ${SSH_USER}@${IP}:/tmp
+                            
+                            # SSH into the VM to handle deployment
+                            ssh ${SSH_USER}@${IP} << 'EOF'
+                                set -e
+                                echo 'Starting deployment on VM...'
 
-                            # Load Docker images
-                            docker load -i /tmp/backend.tar
-                            docker load -i /tmp/frontend.tar
+                                # Navigate to Docker Compose directory
+                                if [ ! -d "${MONGO_DOCKER_COMPOSE_DIR}" ]; then
+                                    echo "Error: Directory ${MONGO_DOCKER_COMPOSE_DIR} does not exist."
+                                    exit 1
+                                fi
+                                cd ${MONGO_DOCKER_COMPOSE_DIR}
 
-                            # Update docker-compose.yml with correct image names (no tag, use default)
-                            sed -i 's|image: .*mern-todo-app-backend.*|image: mern-todo-app-backend|' docker-compose.yml
-                            sed -i 's|image: .*mern-todo-app-frontend.*|image: mern-todo-app-frontend|' docker-compose.yml
+                                # Load Docker images
+                                echo 'Loading Docker images...'
+                                docker load -i /tmp/backend.tar
+                                docker load -i /tmp/frontend.tar
 
-                            # Stop and remove existing containers
-                            docker-compose down || true  # Stop and remove containers (if any)
+                                # Update docker-compose.yml with correct image names
+                                echo 'Updating Docker Compose file...'
+                                sed -i 's|image: .*mern-todo-app-backend.*|image: mern-todo-app-backend|' docker-compose.yml
+                                sed -i 's|image: .*mern-todo-app-frontend.*|image: mern-todo-app-frontend|' docker-compose.yml
 
-                            # Start the services with the newly loaded images
-                            docker-compose up -d --no-build --remove-orphans  # Use --no-build to avoid rebuilding the images
+                                # Stop and remove existing containers
+                                echo 'Stopping existing containers (if any)...'
+                                docker-compose down || true  # Stop and remove containers (ignore errors if none exist)
+
+                                # Start the services with the newly loaded images
+                                echo 'Starting new containers...'
+                                docker-compose up -d --no-build --remove-orphans
 EOF
-                    """
+                        """
+                    }
                 }
             }
         }
