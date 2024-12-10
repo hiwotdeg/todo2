@@ -48,7 +48,7 @@ pipeline {
                 script {
                     echo 'Deploying to VM using Docker Compose...'
 
-                    sshagent(['VM_SSH_KEY']) { // Use the ID of the SSH key credential
+                    sshagent(['Pipeline SSH']) { // Use the ID of the SSH key credential
                         sh """
                             set -e
 
