@@ -20,7 +20,7 @@ pipeline {
 
         stage('Build Docker Image - Backend') {
             steps {
-                dir('todo_backend') {
+                dir('TODO/todo_backend') {
                     script {
                         echo 'Building backend Docker image...'
                         sh "docker build -t ${BACKEND_DOCKER_IMAGE} ."
@@ -31,7 +31,7 @@ pipeline {
 
         stage('Build Docker Image - Frontend') {
             steps {
-                dir('todo_frontend') {
+                dir('TODO/todo_frontend') {
                     script {
                         echo 'Building frontend Docker image...'
                         sh "docker build -t ${FRONTEND_DOCKER_IMAGE} ."
