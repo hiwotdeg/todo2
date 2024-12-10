@@ -4,27 +4,26 @@ pipeline {
     environment {
         BACKEND_DOCKER_IMAGE = 'mern-todo-app-backend'
         FRONTEND_DOCKER_IMAGE = 'mern-todo-app-frontend'
-        IP = credentials('IP') // Use the ID of the secret text
-        SSH_USER = 'kifiya'
-        MONGO_DOCKER_COMPOSE_DIR = '/home/kifiya/mongodb' // Path to MongoDB docker-compose.yml on the VM
+        IP = credentials('IP') // Secret text for VM IP
+        SSH_USER = credentials('SSH_USER') // Secret text for SSH user
+        SSH_KEY = credentials('Pipeline SSH') // SSH private key as Jenkins credential
+        MONGO_DOCKER_COMPOSE_DIR = '/home/kifiya/mongodb'
     }
 
     stages {
         stage('Checkout Source Code') {
             steps {
                 echo 'Checking out source code...'
-                checkout scm // Pulls code from the configured repository
+                checkout scm
             }
         }
 
         stage('Build Docker Image - Backend') {
             steps {
-                dir('TODO/todo_backend') {
+                dir('todo_backend') {
                     script {
                         echo 'Building backend Docker image...'
-                        sh """
-                            docker build -t ${BACKEND_DOCKER_IMAGE} .
-                        """
+                        sh "docker build -t ${BACKEND_DOCKER_IMAGE} ."
                     }
                 }
             }
@@ -32,64 +31,43 @@ pipeline {
 
         stage('Build Docker Image - Frontend') {
             steps {
-                dir('TODO/todo_frontend') {
+                dir('todo_frontend') {
                     script {
                         echo 'Building frontend Docker image...'
-                        sh """
-                            docker build -t ${FRONTEND_DOCKER_IMAGE} .
-                        """
+                        sh "docker build -t ${FRONTEND_DOCKER_IMAGE} ."
                     }
                 }
             }
         }
 
-        stage('Deploy to VM using Docker Compose') {
+        stage('Deploy to VM') {
             steps {
-                script {
-                    echo 'Deploying to VM using Docker Compose...'
+                withCredentials([sshUserPrivateKey(credentialsId: 'SSH_KEY', keyFileVariable: 'SSH_KEY_PATH', usernameVariable: 'SSH_USER')]) {
+                    script {
+                        echo 'Deploying to VM...'
 
-                    sshagent(['Pipeline SSH']) { // Use the ID of the SSH key credential
                         sh """
-                            set -e
-
                             # Save Docker images as tar files
-                            echo 'Saving Docker images...'
                             docker save ${BACKEND_DOCKER_IMAGE} -o backend.tar
                             docker save ${FRONTEND_DOCKER_IMAGE} -o frontend.tar
                             
                             # Copy tar files to the VM
-                            echo 'Copying Docker images to the VM...'
-                            scp backend.tar frontend.tar ${SSH_USER}@${IP}:/tmp
-                            
-                            # SSH into the VM to handle deployment
-                            ssh ${SSH_USER}@${IP} << 'EOF'
+                            scp -i ${SSH_KEY_PATH} backend.tar frontend.tar ${SSH_USER}@${IP}:/tmp
+
+                            # Deploy on the VM
+                            ssh -i ${SSH_KEY_PATH} ${SSH_USER}@${IP} << 'EOF'
                                 set -e
                                 echo 'Starting deployment on VM...'
 
                                 # Navigate to Docker Compose directory
-                                if [ ! -d "${MONGO_DOCKER_COMPOSE_DIR}" ]; then
-                                    echo "Error: Directory ${MONGO_DOCKER_COMPOSE_DIR} does not exist."
-                                    exit 1
-                                fi
                                 cd ${MONGO_DOCKER_COMPOSE_DIR}
 
                                 # Load Docker images
-                                echo 'Loading Docker images...'
                                 docker load -i /tmp/backend.tar
                                 docker load -i /tmp/frontend.tar
 
-                                # Update docker-compose.yml with correct image names
-                                echo 'Updating Docker Compose file...'
-                                sed -i 's|image: .*mern-todo-app-backend.*|image: mern-todo-app-backend|' docker-compose.yml
-                                sed -i 's|image: .*mern-todo-app-frontend.*|image: mern-todo-app-frontend|' docker-compose.yml
-
-                                # Stop and remove existing containers
-                                echo 'Stopping existing containers (if any)...'
-                                docker-compose down || true  # Stop and remove containers (ignore errors if none exist)
-
-                                # Start the services with the newly loaded images
-                                echo 'Starting new containers...'
-                                docker-compose up -d --no-build --remove-orphans
+                                # Start MongoDB and App
+                                docker-compose up -d
 EOF
                         """
                     }
