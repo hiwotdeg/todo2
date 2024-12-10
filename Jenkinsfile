@@ -57,12 +57,12 @@ pipeline {
                             scp -vvv -i ${SSH_KEY_PATH} backend.tar frontend.tar ${SSH_USER}@${IP}:/tmp
 
                             # Debug SSH Deployment (Verbose output)
-                            ssh -vvv -i ${SSH_KEY_PATH} ${SSH_USER}@${IP} << EOF
+                            ssh -vvv -i ${SSH_KEY_PATH} ${SSH_USER}@${IP} "bash -s" <<EOF
                                 set -e
                                 echo 'Starting deployment on VM...'
 
                                 # Navigate to Docker Compose directory
-                                cd \${MONGO_DOCKER_COMPOSE_DIR}
+                                cd ${MONGO_DOCKER_COMPOSE_DIR}
 
                                 # Load Docker images
                                 docker load -i /tmp/backend.tar
