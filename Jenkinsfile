@@ -7,14 +7,14 @@ pipeline {
         IP = credentials('IP') // Secret text for VM IP
         SSH_USER = credentials('SSH_USER') // Secret text for SSH user
         SSH_KEY = credentials('Pipeline SSH') // SSH private key as Jenkins credential
-        MONGO_DOCKER_COMPOSE_DIR = '/home/kifiya/mongodb'
+        MONGO_DOCKER_COMPOSE_DIR = '/home/kifiya/mongodb' // Path to MongoDB docker-compose.yml on the VM
     }
 
     stages {
         stage('Checkout Source Code') {
             steps {
                 echo 'Checking out source code...'
-                checkout scm
+                checkout scm // Pulls code from the configured repository
             }
         }
 
@@ -44,23 +44,25 @@ pipeline {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'SSH_KEY', keyFileVariable: 'SSH_KEY_PATH', usernameVariable: 'SSH_USER')]) {
                     script {
-                        echo 'Deploying to VM...'
+                        echo "IP: ${IP}"
+                        echo "SSH_USER: ${SSH_USER}"
+                        echo "SSH_KEY_PATH: ${SSH_KEY_PATH}"
 
                         sh """
                             # Save Docker images as tar files
                             docker save ${BACKEND_DOCKER_IMAGE} -o backend.tar
                             docker save ${FRONTEND_DOCKER_IMAGE} -o frontend.tar
-                            
-                            # Copy tar files to the VM
-                            scp -i ${SSH_KEY_PATH} backend.tar frontend.tar ${SSH_USER}@${IP}:/tmp
 
-                            # Deploy on the VM
-                            ssh -i ${SSH_KEY_PATH} ${SSH_USER}@${IP} << 'EOF'
+                            # Debug SCP (Verbose output)
+                            scp -vvv -i ${SSH_KEY_PATH} backend.tar frontend.tar ${SSH_USER}@${IP}:/tmp
+
+                            # Debug SSH Deployment (Verbose output)
+                            ssh -vvv -i ${SSH_KEY_PATH} ${SSH_USER}@${IP} << EOF
                                 set -e
                                 echo 'Starting deployment on VM...'
 
                                 # Navigate to Docker Compose directory
-                                cd ${MONGO_DOCKER_COMPOSE_DIR}
+                                cd \${MONGO_DOCKER_COMPOSE_DIR}
 
                                 # Load Docker images
                                 docker load -i /tmp/backend.tar
