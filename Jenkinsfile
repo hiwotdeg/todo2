@@ -77,6 +77,25 @@ pipeline {
                 }
             }
         }
+
+        stage('Deploy') {
+            steps {
+                script {
+                    echo 'Deploying backend container...'
+                    sh """
+                        docker run -d --name backend-container --network todo-app-network \
+                        -e MONGO_URI='mongodb://mongodb:27017/todo-app' \
+                        -p 5000:5000 ${HARBOR_REGISTRY}/kft-lab/${BACKEND_DOCKER_IMAGE}:latest
+                    """
+
+                    echo 'Deploying frontend container...'
+                    sh """
+                        docker run -d --name frontend-container --network todo-app-network \
+                        -p 3000:3000 ${HARBOR_REGISTRY}/kft-lab/${FRONTEND_DOCKER_IMAGE}:latest
+                    """
+                }
+            }
+        }
     }
 
     post {
