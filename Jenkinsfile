@@ -53,14 +53,14 @@ pipeline {
 
                     echo 'Tagging and pushing backend image to Harbor...'
                     sh """
-                        docker tag ${BACKEND_DOCKER_IMAGE} ${HARBOR_REGISTRY}/kft-lab/${BACKEND_DOCKER_IMAGE}
-                        docker push ${HARBOR_REGISTRY}/kft-lab/${BACKEND_DOCKER_IMAGE}
+                        docker tag ${BACKEND_DOCKER_IMAGE} ${HARBOR_REGISTRY}/kft-lab/${BACKEND_DOCKER_IMAGE}:latest
+                        docker push ${HARBOR_REGISTRY}/kft-lab/${BACKEND_DOCKER_IMAGE}:latest
                     """
                     
                     echo 'Tagging and pushing frontend image to Harbor...'
                     sh """
-                        docker tag ${FRONTEND_DOCKER_IMAGE} ${HARBOR_REGISTRY}/kft-lab/${FRONTEND_DOCKER_IMAGE}
-                        docker push ${HARBOR_REGISTRY}/kft-lab/${FRONTEND_DOCKER_IMAGE}
+                        docker tag ${FRONTEND_DOCKER_IMAGE} ${HARBOR_REGISTRY}/kft-lab/${FRONTEND_DOCKER_IMAGE}:latest
+                        docker push ${HARBOR_REGISTRY}/kft-lab/${FRONTEND_DOCKER_IMAGE}:latest
                     """
                 }
             }
