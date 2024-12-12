@@ -4,16 +4,16 @@ pipeline {
     environment {
         BACKEND_DOCKER_IMAGE = 'mern-todo-app-backend'
         FRONTEND_DOCKER_IMAGE = 'mern-todo-app-frontend'
-        IP = credentials('IP') // Use the ID of the secret text
+        IP = credentials('IP') 
         SSH_USER = 'kifiya'
-        MONGO_DOCKER_COMPOSE_DIR = '/home/kifiya/mongodb' // Path to MongoDB docker-compose.yml on the VM
+        MONGO_DOCKER_COMPOSE_DIR = '/home/kifiya/mongodb' 
     }
 
     stages {
         stage('Checkout Source Code') {
             steps {
                 echo 'Checking out source code...'
-                checkout scm // Pulls code from the configured repository
+                checkout scm 
             }
         }
 
