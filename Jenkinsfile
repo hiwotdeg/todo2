@@ -65,6 +65,18 @@ pipeline {
                 }
             }
         }
+
+        stage('Docker Pull - Backend and Frontend') {
+            steps {
+                script {
+                    echo 'Pulling backend and frontend images from Harbor...'
+                    sh """
+                        docker pull ${HARBOR_REGISTRY}/kft-lab/${BACKEND_DOCKER_IMAGE}:latest
+                        docker pull ${HARBOR_REGISTRY}/kft-lab/${FRONTEND_DOCKER_IMAGE}:latest
+                    """
+                }
+            }
+        }
     }
 
     post {
