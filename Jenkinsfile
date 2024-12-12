@@ -4,9 +4,8 @@ pipeline {
     environment {
         BACKEND_DOCKER_IMAGE = 'mern-todo-app-backend'
         FRONTEND_DOCKER_IMAGE = 'mern-todo-app-frontend'
-        IP = credentials('IP') 
-        SSH_USER = 'kifiya'
-        MONGO_DOCKER_COMPOSE_DIR = '/home/kifiya/mongodb' 
+        HARBOR_REGISTRY = credentials('harbor-registry')  
+        HARBOR_CREDENTIALS = credentials('harbor-credentials') 
     }
 
     stages {
@@ -43,61 +42,28 @@ pipeline {
             }
         }
 
-        /*
-        stage('Deploy to VM using Docker Compose') {
+        stage('Push Docker Images to Harbor') {
             steps {
                 script {
-                    echo 'Deploying to VM using Docker Compose...'
+                    echo 'Logging in to Harbor...'
+                    sh """
+                        echo '${HARBOR_CREDENTIALS_PSW}' | docker login ${HARBOR_REGISTRY} -u ${HARBOR_CREDENTIALS_USR} --password-stdin
+                    """
 
-                    sshagent(['Pipeline SSH']) { // Use the ID of the SSH key credential
-                        sh """
-                            set -e
-
-                            # Save Docker images as tar files
-                            echo 'Saving Docker images...'
-                            docker save ${BACKEND_DOCKER_IMAGE} -o backend.tar
-                            docker save ${FRONTEND_DOCKER_IMAGE} -o frontend.tar
-                            
-                            # Copy tar files to the VM
-                            echo 'Copying Docker images to the VM...'
-                            scp backend.tar frontend.tar ${SSH_USER}@${IP}:/tmp
-                            
-                            # SSH into the VM to handle deployment
-                            ssh ${SSH_USER}@${IP} << 'EOF'
-                                set -e
-                                echo 'Starting deployment on VM...'
-
-                                # Navigate to Docker Compose directory
-                                if [ ! -d "${MONGO_DOCKER_COMPOSE_DIR}" ]; then
-                                    echo "Error: Directory ${MONGO_DOCKER_COMPOSE_DIR} does not exist."
-                                    exit 1
-                                fi
-                                cd ${MONGO_DOCKER_COMPOSE_DIR}
-
-                                # Load Docker images
-                                echo 'Loading Docker images...'
-                                docker load -i /tmp/backend.tar
-                                docker load -i /tmp/frontend.tar
-
-                                # Update docker-compose.yml with correct image names
-                                echo 'Updating Docker Compose file...'
-                                sed -i 's|image: .*mern-todo-app-backend.*|image: mern-todo-app-backend|' docker-compose.yml
-                                sed -i 's|image: .*mern-todo-app-frontend.*|image: mern-todo-app-frontend|' docker-compose.yml
-
-                                # Stop and remove existing containers
-                                echo 'Stopping existing containers (if any)...'
-                                docker-compose down || true  # Stop and remove containers (ignore errors if none exist)
-
-                                # Start the services with the newly loaded images
-                                echo 'Starting new containers...'
-                                docker-compose up -d --no-build --remove-orphans
-EOF
-                        """
-                    }
+                    echo 'Tagging and pushing backend image to Harbor...'
+                    sh """
+                        docker tag ${BACKEND_DOCKER_IMAGE} ${HARBOR_REGISTRY}/kft-lab/${BACKEND_DOCKER_IMAGE}
+                        docker push ${HARBOR_REGISTRY}/kft-lab/${BACKEND_DOCKER_IMAGE}
+                    """
+                    
+                    echo 'Tagging and pushing frontend image to Harbor...'
+                    sh """
+                        docker tag ${FRONTEND_DOCKER_IMAGE} ${HARBOR_REGISTRY}/kft-lab/${FRONTEND_DOCKER_IMAGE}
+                        docker push ${HARBOR_REGISTRY}/kft-lab/${FRONTEND_DOCKER_IMAGE}
+                    """
                 }
             }
         }
-        */
     }
 
     post {
