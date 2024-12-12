@@ -91,7 +91,7 @@ pipeline {
                     echo 'Deploying frontend container...'
                     sh """
                         docker run -d --name frontend-container --network todo-app-network \
-                        -p 3000:3000 ${HARBOR_REGISTRY}/kft-lab/${FRONTEND_DOCKER_IMAGE}:latest
+                        -p 3000:80 ${HARBOR_REGISTRY}/kft-lab/${FRONTEND_DOCKER_IMAGE}:latest
                     """
                 }
             }
