@@ -81,6 +81,12 @@ pipeline {
         stage('Deploy') {
             steps {
                 script {
+                    echo 'Cleaning up existing containers...'
+                    sh """
+                        docker rm -f backend-container || true
+                        docker rm -f frontend-container || true
+                    """
+
                     echo 'Deploying backend container...'
                     sh """
                         docker run -d --name backend-container --network todo-app-network \
