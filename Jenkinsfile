@@ -66,6 +66,19 @@ pipeline {
             }
         }
 
+        stage('Deploy MongoDB Container') {
+            steps {
+                script {
+                    echo 'Starting MongoDB container...'
+                    sh """
+                        docker run -d --name mongodb --network todo-app-network \
+                        -e MONGO_INITDB_DATABASE=todo-app \
+                        -p 27017:27017 mongo:latest
+                    """
+                }
+            }
+        }
+
         stage('Docker Pull - Backend and Frontend') {
             steps {
                 script {
@@ -78,7 +91,7 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
+        stage('Deploy Backend and Frontend') {
             steps {
                 script {
                     echo 'Cleaning up existing containers...'
