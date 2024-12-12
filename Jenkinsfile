@@ -4,7 +4,7 @@ pipeline {
     environment {
         BACKEND_DOCKER_IMAGE = 'mern-todo-app-backend'
         FRONTEND_DOCKER_IMAGE = 'mern-todo-app-frontend'
-        HARBOR_REGISTRY = 'https://registry.kifiya.et'
+        HARBOR_REGISTRY = 'registry.kifiya.et'
         HARBOR_CREDENTIALS_USR = credentials('harbor-credentials-username')  
         HARBOR_CREDENTIALS_PSW = credentials('harbor-credentials-password')  
     }
