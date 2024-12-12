@@ -42,7 +42,7 @@ pipeline {
                 }
             }
         }
-
+/*
         stage('Deploy to VM using Docker Compose') {
             steps {
                 script {
@@ -97,7 +97,7 @@ EOF
             }
         }
     }
-
+*/
     post {
         success {
             echo 'Deployment succeeded!'
