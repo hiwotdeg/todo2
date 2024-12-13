@@ -73,7 +73,7 @@ pipeline {
                     sh """
                         docker run -d --name mongodb --network todo-app-network \
                         -e MONGO_INITDB_DATABASE=todo-app \
-                        -p 27017:27017 mongo:latest
+                        -p 27017:27017 mongo:4.4
                     """
                 }
             }
