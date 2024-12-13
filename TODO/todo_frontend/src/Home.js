@@ -10,13 +10,13 @@ const Home = () => {
     const [taskid, setTaskid] = useState('');
 
     useEffect(() => {
-        axios.get('http://10.254.99.54:5000/get')
+        axios.get('https://merntodoapp-api.dev.kifiya.et/get')
             .then(result => setTodos(result.data))
             .catch(err => console.log(err));
     }, []);
 
     const edit = (id) => {
-        axios.put(`http://10.254.99.54:5000/edit/${id}`)
+        axios.put(`https://merntodoapp-api.dev.kifiya.et/edit/${id}`)
             .then(result => {
                 console.log(result.data);
                 const updatedTodos = todos.map(todo => {
@@ -31,7 +31,7 @@ const Home = () => {
     };
 
     const Update = (id, updatedTask) => {
-        axios.put(`http://10.254.99.54:5000/update/${id}`, { task: updatedTask })
+        axios.put(`https://merntodoapp-api.dev.kifiya.et/update/${id}`, { task: updatedTask })
             .then(result => {
                 console.log(result.data);
                 const updatedTodos = todos.map(todo => {
@@ -49,7 +49,7 @@ const Home = () => {
     };
 
     const Hdelete = (id) => {
-        axios.delete(`http://10.254.99.54:5000/delete/${id}`)
+        axios.delete(`https://merntodoapp-api.dev.kifiya.et:5000/delete/${id}`)
             .then(result => {
                 console.log(result.data);
                 const updatedTodos = todos.filter(todo => todo._id !== id);
