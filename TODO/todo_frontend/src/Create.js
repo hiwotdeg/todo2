@@ -6,7 +6,7 @@ const Create = () => {
     const [task, setTask] = useState('');
 
     const createTask = () => {
-        axios.post('http://backend-container:5000/add', { task: task.trim() })
+        axios.post('http://10.254.99.54:5000/add', { task: task.trim() })
             .then(result => {
                 console.log(result.data);
                 window.location.reload();
