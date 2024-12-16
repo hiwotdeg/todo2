@@ -49,7 +49,7 @@ const Home = () => {
     };
 
     const Hdelete = (id) => {
-        axios.delete(`https://merntodoapp-api.dev.kifiya.et:5000/delete/${id}`)
+        axios.delete(`https://merntodoapp-api.dev.kifiya.et/delete/${id}`)
             .then(result => {
                 console.log(result.data);
                 const updatedTodos = todos.filter(todo => todo._id !== id);
