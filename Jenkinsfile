@@ -69,6 +69,11 @@ pipeline {
         stage('Deploy MongoDB Container') {
             steps {
                 script {
+                    echo 'Stopping and removing any existing MongoDB container...'
+                    sh """
+                        docker rm -f mongodb || true
+                    """
+
                     echo 'Starting MongoDB container...'
                     sh """
                         docker run -d --name mongodb --network todo-app-network \
