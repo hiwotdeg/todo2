@@ -4,7 +4,7 @@ pipeline {
     environment {
         BACKEND_DOCKER_IMAGE = 'mern-todo-app-backend'
         FRONTEND_DOCKER_IMAGE = 'mern-todo-app-frontend'
-        HARBOR_REGISTRY = 'registry.kifiya.et'
+        HARBOR_REGISTRY = credentials('harbor-registry-url')  
         HARBOR_CREDENTIALS_USR = credentials('harbor-credentials-username')  
         HARBOR_CREDENTIALS_PSW = credentials('harbor-credentials-password')  
     }
@@ -61,24 +61,6 @@ pipeline {
                     sh """
                         docker tag ${FRONTEND_DOCKER_IMAGE} ${HARBOR_REGISTRY}/kft-lab/${FRONTEND_DOCKER_IMAGE}:latest
                         docker push ${HARBOR_REGISTRY}/kft-lab/${FRONTEND_DOCKER_IMAGE}:latest
-                    """
-                }
-            }
-        }
-
-        stage('Deploy MongoDB Container') {
-            steps {
-                script {
-                    echo 'Stopping and removing any existing MongoDB container...'
-                    sh """
-                        docker rm -f mongodb || true
-                    """
-
-                    echo 'Starting MongoDB container...'
-                    sh """
-                        docker run -d --name mongodb --network todo-app-network \
-                        -e MONGO_INITDB_DATABASE=todo-app \
-                        -p 27017:27017 mongo:4.4
                     """
                 }
             }
